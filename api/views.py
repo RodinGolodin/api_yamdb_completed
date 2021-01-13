@@ -22,3 +22,4 @@ class CommentViewSet(ModelViewSet):
             id=self.kwargs.get('review_id')
         )
         return review.comments.all().order_by('id')
+    
