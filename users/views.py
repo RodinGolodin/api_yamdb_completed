@@ -29,6 +29,7 @@ class UserViewSet(
 class UsersViewSet(viewsets.ModelViewSet):
     serializer_class = UsersSerializer
     pagination_class = BasePagination
+    queryset = User.objects.all()
 
 
 class AuthViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
