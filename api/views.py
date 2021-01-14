@@ -1,17 +1,16 @@
 from django.shortcuts import get_object_or_404
+from rest_framework import filters, mixins, permissions, viewsets
 from rest_framework.viewsets import ModelViewSet
 
 from api.permissions import ReviewCommentPermission
+from users.permissions import IsAdminOrReadOnly
 
-from .models import Review, Genre, Category, Title
-from .serializers import CommentSerializer, ReviewSerializer
+from .models import Category, Genre, Review, Title
+from .serializers import (CategorySerializer, CommentSerializer,
+                          ReviewSerializer)
 
 
 class GenreViewSet(ModelViewSet):
-    pass
-
-
-class CategoryViewSet(ModelViewSet):
     pass
 
 
@@ -43,3 +42,24 @@ class CommentViewSet(ModelViewSet):
     def perform_create(self, serializer):
         get_object_or_404(Review, id=self.kwargs.get('review_id'))
         serializer.save(author=self.request.user)
+
+
+class CategoryViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet
+):
+    """
+    Category view class. Allowed only GET, POST and DELETE methods.
+    Search by slug field is possible.
+    """
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [
+        permissions.IsAuthenticatedOrReadOnly,
+        IsAdminOrReadOnly
+    ]
+    lookup_field = 'slug'
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']

@@ -1,16 +1,19 @@
-from rest_framework import viewsets, permissions, status, filters, exceptions
+import uuid
+
+from django.core import exceptions
+from django.core.mail import send_mail
+from rest_framework import exceptions, filters, permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from api_yamdb.settings import DEFAULT_FROM_EMAIL
-from django.core.mail import send_mail
-from rest_framework.decorators import action
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.core import exceptions
+
 from api.models import User
-from .serializers import UserSerializer, TokenSerializer, SignUpSerializer
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
+
 from .permissions import IsAdmin
-import uuid
+from .serializers import SignUpSerializer, TokenSerializer, UserSerializer
 
 
 class UserViewSet(viewsets.ModelViewSet):

@@ -1,8 +1,9 @@
 from datetime import date
-from django.db import models
 
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from django.db.models.fields import related
+
 from users.models import User
 
 
@@ -11,7 +12,11 @@ class Genre(models.Model):
 
 
 class Category(models.Model):
-    pass
+    name = models.CharField(max_length=25)
+    slug = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Title(models.Model):

@@ -1,11 +1,13 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import UserViewSet, CodeConfirmView, EmailSignUpView
+from .views import CodeConfirmView, EmailSignUpView, UserViewSet
 
 router = DefaultRouter()
 
+
 router.register(r'users', UserViewSet)
+
 auth_patterns = [
     path(
         'email/',
