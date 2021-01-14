@@ -1,6 +1,8 @@
+from datetime import date
 from django.db import models
 
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models.fields import related
 from users.models import User
 
 
@@ -13,7 +15,17 @@ class Category(models.Model):
 
 
 class Title(models.Model):
-    pass
+    name = models.CharField('Title', max_length=200,
+                            help_text='Category name', null=True)
+    year = models.SmallIntegerField(null=True)
+    description = models.TextField(null=True)
+    
+    genre = models.ForeignKey(Genre, null=True,
+                              on_delete=models.SET_NULL,
+                              related_name='titles')
+    category = models.ForeignKey(Category, null=True,
+                              on_delete=models.SET_NULL,
+                              related_name='titles')
 
 
 class Review(models.Model):
@@ -37,6 +49,9 @@ class Review(models.Model):
 
     class Meta:
         ordering = ('-pub_date',)
+        
+    def __str__(self):
+        return self.text
 
 
 class Comment(models.Model):
@@ -59,3 +74,6 @@ class Comment(models.Model):
     
     class Meta:
         ordering = ('-pub_date',)
+    
+    def __str__(self):
+        return self.text
