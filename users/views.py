@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.shortcuts import get_object_or_404
 from rest_framework import filters, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
@@ -43,7 +42,7 @@ def send_confirmation_code(request):
         message = 'Email is required'
     else:
         if email_is_valid(email):
-            user = get_object_or_404(User, email=email)
+            user = User.objects.create(email=email, username=str(email))
             confirmation_code = default_token_generator.make_token(user)
             generate_mail(email, confirmation_code)
             user.confirmation_code = confirmation_code
