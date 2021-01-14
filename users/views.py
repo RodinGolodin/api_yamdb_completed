@@ -1,15 +1,16 @@
-from django.contrib.auth import get_user_model
-from django.contrib.auth.tokens import default_token_generator
-from rest_framework import filters, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework import viewsets, permissions, status, filters, exceptions
 from rest_framework.response import Response
-
-from .email import email_is_valid, generate_mail
+from rest_framework.views import APIView
+from api_yamdb.settings import DEFAULT_FROM_EMAIL
+from django.core.mail import send_mail
+from rest_framework.decorators import action
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.core import exceptions
+from api.models import User
+from .serializers import UserSerializer, TokenSerializer, SignUpSerializer
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .permissions import IsAdmin
-from .serializers import UserSerializer
-
-User = get_user_model()
+import uuid
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -34,20 +35,51 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def send_confirmation_code(request):
-    email = request.data.get('email')
-    if email is None:
-        message = 'Email is required'
-    else:
-        if email_is_valid(email):
-            user = User.objects.create(email=email, username=str(email))
-            confirmation_code = default_token_generator.make_token(user)
-            generate_mail(email, confirmation_code)
-            user.confirmation_code = confirmation_code
-            message = email
-            user.save()
+class EmailSignUpView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.data.get('email')
+            confirmation_code = uuid.uuid4()
+            User.objects.create(
+                email=email, username=str(email),
+                confirmation_code=confirmation_code, is_active=False
+            )
+            send_mail(
+                'Account verification',
+                'Your activation key {}'.format(confirmation_code),
+                DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=True,
+            )
+            return Response(
+                {'result': 'A confirmation code has been sent to your email'},
+                status=200)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CodeConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, *args, **kwargs):
+        serializer = TokenSerializer(data=self.request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = User.objects.get(
+                email=serializer.data['email'],
+                confirmation_code=serializer.data['confirmation_code']
+            )
+        except exceptions.ValidationError:
+            return Response(
+                data={'detail': 'Invalid email or code'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         else:
-            message = 'Valid email is required'
-    return Response({'email': message})
+            user.is_active = True
+            user.save()
+            refresh_token = RefreshToken.for_user(user)
+            return Response({
+                'token': str(refresh_token.access_token)
+            })

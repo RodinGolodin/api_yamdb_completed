@@ -1,23 +1,25 @@
-from django.contrib.auth.models import AbstractUser
+import uuid
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
+    bio = models.TextField(max_length=500, blank=True)
+    email = models.EmailField(help_text='email address', unique=True)
 
-    class Role(models.TextChoices):
-        USER = 'user', _('User')
-        MODERATOR = 'moderator', _('Moderator')
-        ADMIN = 'admin', _('Admin')
+    class UserRole:
+        USER = 'user'
+        ADMIN = 'admin'
+        MODERATOR = 'moderator'
+        choices = [
+            (USER, 'user'),
+            (ADMIN, 'admin'),
+            (MODERATOR, 'moderator'),
+        ]
 
-    email = models.EmailField(_('email address'), blank=False, unique=True)
-    bio = models.TextField(blank=True)
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
-        default=Role.USER,
-        )
-    confirmation_code = models.CharField(max_length=100, blank=True, )
+    role = models.CharField(max_length=25, choices=UserRole.choices,
+                            default=UserRole.USER)
+    confirmation_code = models.UUIDField(default=uuid.uuid4, editable=False)
 
-    def __str__(self):
-        return self.username
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']

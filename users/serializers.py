@@ -1,35 +1,28 @@
-from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import RefreshToken
-
-User = get_user_model()
-
-
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
-
-
-class EmailAuthSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    confirmation_code = serializers.CharField(max_length=100)
-
-    def validate(self, data):
-        user = get_object_or_404(
-            User, confirmation_code=data['confirmation_code'],
-            email=data['email']
-        )
-        return get_tokens_for_user(user)
+from .models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('first_name', 'last_name', 'username',
-                  'bio', 'role', 'email')
+        fields = (
+            'username',
+            'id',
+            'first_name',
+            'last_name',
+            'email',
+            'role',
+            'bio',
+        )
         model = User
+
+
+class TokenSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    confirmation_code = serializers.CharField(required=True)
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email',)

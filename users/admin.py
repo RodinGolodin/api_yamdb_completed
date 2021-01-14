@@ -1,6 +1,9 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
 
-from .models import User
+from api.models import User
 
-admin.site.register(User, UserAdmin)
+
+@admin.register(User)
+class UserAdmin(admin.ModelAdmin):
+    list_display = ('id', 'first_name', 'last_name', 'username', 'bio', 'email', 'role')
+    empty_value_display = '-пусто-'
