@@ -1,58 +1,54 @@
-from rest_framework import filters, mixins, permissions, viewsets
-from rest_framework.generics import get_object_or_404
-from .serializers import UserSerializer, CustomTokenObtainPairSerializer, \
-    AuthSerializer, UsersSerializer
-from .models import User
-from django.core.mail import send_mail
-from api_yamdb import settings
-import random
-from rest_framework.pagination import BasePagination
-from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import get_object_or_404
+from rest_framework import filters, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+
+from .email import email_is_valid, generate_mail
+from .permissions import IsAdmin
+from .serializers import UserSerializer
+
+User = get_user_model()
 
 
-class UserViewSet(
-    mixins.ListModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
-    serializer_class = UserSerializer
-
-    def perform_create(self, serializer):
-        return serializer.save()
-
-    def get_queryset(self):
-        user = self.request.user
-        serialized_user = UserSerializer(user).data
-        return User.objects.filter(user=serialized_user)
-
-
-class UsersViewSet(viewsets.ModelViewSet):
-    serializer_class = UsersSerializer
-    pagination_class = BasePagination
+class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
+    permission_classes = [IsAdminUser | IsAdmin]
+    serializer_class = UserSerializer
+    lookup_field = 'username'
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['username', ]
+
+    @action(methods=['patch', 'get'], detail=False,
+            permission_classes=[IsAuthenticated],
+            url_path='me', url_name='me')
+    def me(self, request, *args, **kwargs):
+        instance = self.request.user
+        serializer = self.get_serializer(instance)
+        if self.request.method == 'PATCH':
+            serializer = self.get_serializer(
+                instance, data=request.data, partial=True)
+            serializer.is_valid()
+            serializer.save()
+        return Response(serializer.data)
 
 
-class AuthViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    serializer_class = AuthSerializer
-
-    def get_email_code(self):
-        if self.request.method == 'POST':
-            email = self.request.POST['email']
-            chars = (
-                'abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNO'
-                'PQRSTUVWXYZ1234567890'
-            )
-            for n in range(1):
-                password = ''
-                for i in range(18):
-                    password += random.choice(chars)
-                send_mail(
-                    'Password',
-                    password,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [email]
-                )
-
-
-class EmailTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def send_confirmation_code(request):
+    email = request.data.get('email')
+    if email is None:
+        message = 'Email is required'
+    else:
+        if email_is_valid(email):
+            user = get_object_or_404(User, email=email)
+            confirmation_code = default_token_generator.make_token(user)
+            generate_mail(email, confirmation_code)
+            user.confirmation_code = confirmation_code
+            message = email
+            user.save()
+        else:
+            message = 'Valid email is required'
+    return Response({'email': message})

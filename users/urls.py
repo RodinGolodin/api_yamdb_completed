@@ -1,20 +1,38 @@
-from .views import UserViewSet, UsersViewSet
-from rest_framework import routers
-from .views import AuthViewSet, EmailTokenObtainPairView
-from django.urls import path, include
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import (TokenObtainPairView,
+                                            TokenRefreshView)
 
-router = routers.DefaultRouter()
+from .serializers import EmailAuthSerializer
+from .views import UserViewSet, send_confirmation_code
 
-router.register('users', UsersViewSet, basename='users')
-router.register(r'users/me', UserViewSet, basename='user')
-router.register(r'auth/email', AuthViewSet, basename='auth')
+router = DefaultRouter()
+
+router.register(r'users', UserViewSet)
+auth_patterns = [
+    path(
+        'email/',
+        send_confirmation_code,
+    ),
+    path(
+        'token/',
+        TokenObtainPairView.as_view(serializer_class=EmailAuthSerializer),
+        name='token_obtain_pair',
+    ),
+    path(
+        'token/refresh/',
+        TokenRefreshView.as_view(),
+        name='token_refresh',
+    ),
+]
+
 urlpatterns = [
+    path(
+        'v1/auth/',
+        include(auth_patterns),
+    ),
     path(
         'v1/',
         include(router.urls),
     ),
-]
-
-urlpatterns += [
-    path('v1/auth/token/', EmailTokenObtainPairView.as_view())
 ]

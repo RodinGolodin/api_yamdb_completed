@@ -1,55 +1,23 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from django.utils.translation import gettext_lazy as _
 
 
-class UserManager(BaseUserManager):
-    use_in_migrations = True
+class User(AbstractUser):
 
-    def create_user(self, email, password=None):
-        user = self.model(
-            email=self.normalize_email(email),
+    class Role(models.TextChoices):
+        USER = 'user', _('User')
+        MODERATOR = 'moderator', _('Moderator')
+        ADMIN = 'admin', _('Admin')
+
+    email = models.EmailField(_('email address'), blank=False, unique=True)
+    bio = models.TextField(blank=True)
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.USER,
         )
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_staffuser(self, email, password):
-        user = self.create_user(
-            email,
-            password=password,
-        )
-        user.staff = True
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password):
-        user = self.create_user(
-            email,
-            password=password,
-        )
-        user.staff = True
-        user.admin = True
-        user.save(using=self._db)
-        return user
-
-
-class User(AbstractBaseUser):
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    bio = models.TextField(max_length=300)
-    username = models.CharField(max_length=100, unique=True)
-    email = models.EmailField(unique=True)
-    role = models.CharField(default='user', )
-    objects = UserManager()
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['date_of_birth', 'name']
+    confirmation_code = models.CharField(max_length=100, blank=True, )
 
     def __str__(self):
-        return self.email
-
-
-class Auth(models.Model):
-    email = models.EmailField(max_length=100)
-
-
-
+        return self.username
