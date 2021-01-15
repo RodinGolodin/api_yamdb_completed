@@ -1,10 +1,11 @@
-from datetime import date
+import datetime
 
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.db.models.fields import related
 
 from users.models import User
+
+now = datetime.datetime.now()
 
 
 class Genre(models.Model):
@@ -24,24 +25,24 @@ class Category(models.Model):
     
 
 class Title(models.Model):
-    name = models.CharField(max_length=90)
-    year = models.IntegerField()
-    description = models.TextField(
-        max_length=200,
-        blank=True
+    name = models.CharField(db_index=True, max_length=100)
+    year = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(int(now.year))],
+        default=None
     )
-    genre = models.ManyToManyField(
-        Genre,
-        related_name='genre'
-    )
+    description = models.TextField()
+    genre = models.ManyToManyField(Genre, related_name='genres', blank=True)
     category = models.ForeignKey(
         Category,
-        on_delete=models.PROTECT,
-        related_name='categories'
-    )  
+        on_delete=models.SET_NULL,
+        related_name='categories',
+        blank=True,
+        null=True
+    )
+    rating = models.IntegerField(null=True, default=None)
 
-    def __str__(self):
-        return self.name
+    class Meta:
+        ordering = ['-id']
 
 
 class Review(models.Model):
@@ -50,24 +51,22 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-    text = models.TextField()
+    text = models.TextField(blank=False)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='reviews'
     )
     score = models.IntegerField(
+        'review score',
         validators=[MinValueValidator(1), MaxValueValidator(10)]
     )
     pub_date = models.DateTimeField(
-        'date published', auto_now_add=True, blank=True
+        'review date', auto_now_add=True
     )
 
     class Meta:
-        ordering = ('-pub_date',)
-        
-    def __str__(self):
-        return self.text
+        ordering = ['-pub_date',]
 
 
 class Comment(models.Model):
@@ -76,20 +75,16 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name='comments'
     )
-    text = models.TextField()
+    text = models.TextField('comment text', blank=False)
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='comments'
     )
     pub_date = models.DateTimeField(
-        'date published', 
+        'comment date', 
         auto_now_add=True,
-        blank=True
     )
     
     class Meta:
-        ordering = ('-pub_date',)
-    
-    def __str__(self):
-        return self.text
+        ordering = ['-pub_date']
