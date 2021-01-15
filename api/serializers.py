@@ -6,22 +6,6 @@ from .models import Category, Comment, Genre, Review, Title
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-<<<<<<< HEAD
-    author = serializers.ReadOnlyField(
-        source='author.username',
-    )
-    title_id = serializers.ReadOnlyField(
-        source='title.pk',
-    )
-    score = serializers.IntegerField(
-        min_value=1,
-        max_value=10,
-    )
-
-    class Meta:
-        model = Review
-        fields = '__all__'
-=======
     title = serializers.SlugRelatedField(
         slug_field='name',
         read_only=True,
@@ -41,13 +25,13 @@ class ReviewSerializer(serializers.ModelSerializer):
             if Review.objects.filter(title=title, author=author).exists():
                 raise ValidationError('Only one review is allowed')
         return data
->>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
 
     def create(self, validated_data):
         author = self.context['request'].user
         title_id = self.context['view'].kwargs.get('title_id')
         title = get_object_or_404(Title, pk=title_id)
-        return Review.objects.create(title=title, author=author, **validated_data)
+        return Review.objects.create(title=title, author=author,
+                                     **validated_data)
 
     class Meta:
         model = Review
@@ -55,10 +39,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-<<<<<<< HEAD
-    author = serializers.ReadOnlyField(
-        source='author.username',
-=======
     review = serializers.SlugRelatedField(
         slug_field='text',
         read_only=True
@@ -66,65 +46,35 @@ class CommentSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
->>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
     )
 
     class Meta:
+        fields = '__all__'
         model = Comment
-<<<<<<< HEAD
-        fields = (
-            'id',
-            'text',
-            'author',
-            'pub_date',
-        )
-=======
-        
+
     def create(self, validated_data):
         author = self.context['request'].user
         review_id = self.context['view'].kwargs.get('review_id')
         review = get_object_or_404(Review, pk=review_id)
-        return Comment.objects.create(review=review, author=author, **validated_data)
->>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
+        return Comment.objects.create(review=review, author=author,
+                                      **validated_data)
 
 
 class CategorySerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Category
-        fields = (
-            'name',
-            'slug',
-        )
+        fields = ('name', 'slug')
 
 
 class GenreSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Genre
-        fields = (
-            'name',
-            'slug',
-        )
-        
+        fields = ('name', 'slug')
+
 
 class TitleReadSerializer(serializers.ModelSerializer):
-<<<<<<< HEAD
-    genre = GenreSerializer(
-        read_only=True,
-        many=True,
-    )
-    category = CategorySerializer(
-        read_only=True,
-    )
-    rating = serializers.IntegerField(
-        read_only=True,
-        required=False,
-    )
-=======
     genre = GenreSerializer(read_only=True, many=True)
     category = CategorySerializer(read_only=True)
->>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
 
     class Meta:
         fields = "__all__"
@@ -133,20 +83,12 @@ class TitleReadSerializer(serializers.ModelSerializer):
 
 class TitleWriteSerializer(TitleReadSerializer):
     genre = serializers.SlugRelatedField(
-        queryset=Genre.objects.all(),
-        slug_field='slug',
-        many=True,
+        queryset=Genre.objects.all(), slug_field='slug', many=True
     )
     category = serializers.SlugRelatedField(
-<<<<<<< HEAD
-        queryset=Category.objects.all(),
-        slug_field='slug',
-    )
-=======
         queryset=Category.objects.all(), slug_field='slug'
     )
-    
+
     class Meta:
         fields = '__all__'
         model = Title
->>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
