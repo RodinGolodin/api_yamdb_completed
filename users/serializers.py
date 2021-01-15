@@ -19,8 +19,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class TokenSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    confirmation_code = serializers.CharField(required=True)
+    email = serializers.EmailField(
+        required=True,
+    )
+    confirmation_code = serializers.CharField(
+        required=True,
+    )
 
 
 class SignUpSerializer(serializers.ModelSerializer):

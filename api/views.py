@@ -1,21 +1,19 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, mixins, permissions, viewsets
-from rest_framework.viewsets import ModelViewSet
+from rest_framework import filters, mixins, permissions, viewsets, exceptions
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 
-from api.permissions import ReviewCommentPermission
-from users.permissions import IsAdminOrReadOnly
+from users.permissions import IsAdminOrReadOnly, IsStaffOrOwnerOrReadOnly
 
 from .filters import TitleFilter
-from .models import Category, Genre, Review, Title
+from .models import Category, Genre, Review, Title, Comment
 from .serializers import (CategorySerializer, CommentSerializer,
                           GenreSerializer, ReviewSerializer,
                           TitleReadSerializer, TitleWriteSerializer)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+    queryset = Title.objects.annotate(rating=Avg('review__score'))
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
         IsAdminOrReadOnly
@@ -29,30 +27,56 @@ class TitleViewSet(viewsets.ModelViewSet):
         return TitleReadSerializer
 
 
-class ReviewViewSet(ModelViewSet):
+class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
-    permission_classes = [ReviewCommentPermission]
-    
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+    permission_classes = [
+        permissions.IsAuthenticatedOrReadOnly,
+        IsStaffOrOwnerOrReadOnly,
+    ]
 
-
-class CommentViewSet(ModelViewSet):
-    serializer_class = CommentSerializer
-    permission_classes = [ReviewCommentPermission]
-    
     def get_queryset(self):
-        review = get_object_or_404(
-            Review,
-            title_id=self.kwargs.get('title_id'),
-            id=self.kwargs.get('review_id')
-        )
-        return review.comments.all().order_by('id')
-    
+        queryset = self.queryset
+        return queryset.filter(title_id=self.kwargs['title_id'])
+
     def perform_create(self, serializer):
-        get_object_or_404(Review, id=self.kwargs.get('review_id'))
-        serializer.save(author=self.request.user)
+        title = get_object_or_404(
+            Title,
+            pk=self.kwargs.get('title_id'),
+        )
+        if Review.objects.filter(
+                author=self.request.user,
+                title_id=title).exists():
+            raise exceptions.ValidationError('You have already rated')
+        serializer.save(author=self.request.user, title_id=title)
+        title.update_rating()
+
+    def perform_update(self, serializer):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        serializer.save(author=self.request.user, title_id=title)
+        title.update_rating()
+
+    def perform_destroy(self, instance):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        instance.delete()
+        title.update_rating()
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [
+        permissions.IsAuthenticatedOrReadOnly,
+        IsStaffOrOwnerOrReadOnly,
+    ]
+
+    def get_queryset(self):
+        queryset = self.queryset
+        return queryset.filter(review_id=self.kwargs['review_id'])
+
+    def perform_create(self, serializer):
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        serializer.save(author=self.request.user, review_id=review)
 
 
 class CategoryViewSet(
@@ -68,7 +92,7 @@ class CategoryViewSet(
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [
-        permissions.IsAuthenticatedOrReadOnly,
+
         IsAdminOrReadOnly
     ]
     lookup_field = 'slug'
@@ -86,9 +110,8 @@ class GenreViewSet(
     serializer_class = GenreSerializer
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
-        IsAdminOrReadOnly
+        IsAdminOrReadOnly,
     ]
     lookup_field = 'slug'
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
-    
