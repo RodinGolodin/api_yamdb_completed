@@ -24,16 +24,21 @@ class Category(models.Model):
     
 
 class Title(models.Model):
-    name = models.TextField('title', max_length=200,
-                            null=True)
-    year = models.IntegerField(null=True)
-    description = models.CharField(max_length=200, null=True,
-                                   blank=True)
-    genre = models.ManyToManyField(Genre, blank=True, db_index=True,
-                                   related_name='titles')
-    category = models.ForeignKey(Category, null=True, 
-                                 on_delete=models.SET_NULL,
-                                 blank=True, related_name='titles')    
+    name = models.CharField(max_length=90)
+    year = models.IntegerField()
+    description = models.TextField(
+        max_length=200,
+        blank=True
+    )
+    genre = models.ManyToManyField(
+        Genre,
+        related_name='genre'
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name='categories'
+    )  
 
     def __str__(self):
         return self.name
