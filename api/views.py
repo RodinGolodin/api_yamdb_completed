@@ -1,5 +1,11 @@
 from django.shortcuts import get_object_or_404
+<<<<<<< HEAD
 from rest_framework import filters, mixins, permissions, viewsets, exceptions
+=======
+from rest_framework import filters, mixins, permissions, viewsets
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+>>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
 from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -13,20 +19,34 @@ from .serializers import (CategorySerializer, CommentSerializer,
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+<<<<<<< HEAD
     queryset = Title.objects.annotate(rating=Avg('review__score'))
     permission_classes = [
         permissions.IsAuthenticatedOrReadOnly,
         IsAdminOrReadOnly
     ]
+=======
+    serializer_class = TitleWriteSerializer
+    queryset = Title.objects.all()
+    pagination_class = PageNumberPagination
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrReadOnly]
+>>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
+    search_fields = ('name', 'year')
 
     def get_serializer_class(self):
-        if self.request.method in ['POST', 'PATCH']:
-            return TitleWriteSerializer
-        return TitleReadSerializer
+        if self.action == 'retrieve' or self.action == 'list':
+            return TitleReadSerializer
+        return TitleWriteSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.rating = instance.reviews.all().aggregate(Avg('score'))['score__avg']
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
+<<<<<<< HEAD
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.all()
     serializer_class = ReviewSerializer
@@ -77,6 +97,25 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
         serializer.save(author=self.request.user, review_id=review)
+=======
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [ReviewCommentPermission]
+
+    def get_queryset(self):
+        title = get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+        return title.reviews.all()
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    permission_classes = [ReviewCommentPermission]
+
+    def get_queryset(self):
+        review = get_object_or_404(Review, pk=self.kwargs.get('review_id'))
+        return review.comments.all()
+>>>>>>> 93331ef2ea761fce8c2e96f047661e3933ae8b4b
 
 
 class CategoryViewSet(
