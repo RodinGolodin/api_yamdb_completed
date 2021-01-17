@@ -37,7 +37,7 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.request.method == 'PATCH':
             serializer = self.get_serializer(
                 instance, data=request.data, partial=True)
-            serializer.is_valid()
+            serializer.is_valid(raise_exception=True)
             serializer.save(email=instance.email, role=instance.role)
         return Response(serializer.data)
 
@@ -52,7 +52,7 @@ class EmailSignUpView(APIView):
     def post(self, request):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
-            email = serializer.data.get('email')
+            email = serializer.validated_data.get('email')
             confirmation_code = uuid.uuid4()
             User.objects.create(
                 email=email, username=str(email),

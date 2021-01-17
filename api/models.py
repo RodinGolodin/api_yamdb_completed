@@ -5,6 +5,8 @@ from django.db import models
 
 from users.models import User
 
+from .validators import year_validator
+
 now = datetime.datetime.now()
 
 
@@ -26,23 +28,19 @@ class Category(models.Model):
 
 class Title(models.Model):
     name = models.CharField(db_index=True, max_length=100)
-    year = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(int(now.year))],
-        default=None
-    )
+    year = models.IntegerField(blank=True, validators=[year_validator])
     description = models.TextField()
-    genre = models.ManyToManyField(Genre, related_name='genres', blank=True)
+    genre = models.ManyToManyField(Genre, related_name='titles', blank=True)
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
-        related_name='categories',
+        related_name='titles',
         blank=True,
         null=True
     )
-    rating = models.IntegerField(null=True, default=None)
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['-id',]
 
 
 class Review(models.Model):
