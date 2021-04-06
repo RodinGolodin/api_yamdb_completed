@@ -44,7 +44,7 @@ Sample response:
 }
 ```
 
-Sample POST request to `/api/v1/titles/{title_id}/reviews/{review_id}/comments/` to add a comment to the post above (id=3):
+Sample POST request to `/api/v1/titles/{title_id}/reviews/{review_id}/comments/` to add a comment to the review above (id=0):
 
 ```
 {
