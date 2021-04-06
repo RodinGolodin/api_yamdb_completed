@@ -1,6 +1,6 @@
 # YaMDb API
 
-The YaMDb API allows you to interact with the RESTful API of a fictional YaMDB review service for creative works like movies, books, and music.
+The YaMDb API allows you to interact with the RESTful API of a fictional YaMDb review service for creative works like movies, books, and music.
 
 ## Features
 
