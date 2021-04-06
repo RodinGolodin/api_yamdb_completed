@@ -19,7 +19,7 @@ The YaMDb API allows you to interact with the RESTful API of a fictional YaMDb r
 
 ### Authorization
 
-To get access to the API, make a POST request with your **email address** to `/api/v1/auth/email`, after which you will receive a confirmation code. Next, submit a POST request to `/api/v1/auth/token` with your email address and the confirmation token. In response, you'll receive a JWT token. When calling the API, pass the token in the header as **Authorization: Bearer**.
+To get access to the API, make a POST request with your **email address** to `/api/v1/auth/email`, after which you will receive a confirmation code. Next, submit a POST request to `/api/v1/auth/token` with your email address and the confirmation token. In response, you'll receive a JWT token. When calling the API, pass the token in the header as **Authorization: Bearer [token]**.
 
 ### Example requests and responses
 
@@ -44,7 +44,7 @@ Sample response:
 }
 ```
 
-Sample POST request to `/api/v1/titles/{title_id}/reviews/{review_id}/comments/` to add a comment to the review above (id=0):
+Sample POST request to `/api/v1/titles/{title_id}/reviews/{review_id}/comments/` to add a comment to a review:
 
 ```
 {
