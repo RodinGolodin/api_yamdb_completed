@@ -14,6 +14,7 @@ The YaMDb API allows you to interact with the RESTful API of a fictional YaMDb r
 1. Fork and clone the repository
 2. Set up a virtual environment
 3. Install the dependencies: `pip install -r requirements.txt`
+4. Configure email settings in `settings.py`
 
 ## Usage
 
