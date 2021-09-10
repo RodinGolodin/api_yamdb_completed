@@ -42,7 +42,7 @@ ruamel.yaml==0.17.2
 ruamel.yaml.clib==0.2.2
 simple-configparser==0.1.4.0
 six==1.15.0
-sqlparse==0.4.1
+sqlparse==0.4.2
 terminaltables==3.1.0
 toml==0.10.2
 tzdata==2021.1
