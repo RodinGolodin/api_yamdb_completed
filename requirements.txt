@@ -9,7 +9,7 @@ colorclass==2.2.0
 configparser==5.0.2
 cssselect==1.1.0
 cssutils==2.2.0
-Django==3.2
+Django==3.2.15
 django-filter==2.4.0
 django-simple-email-confirmation==0.70
 djangorestframework==3.12.4
